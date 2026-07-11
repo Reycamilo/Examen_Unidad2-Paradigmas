@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { calculateSavings, type SavingsResult } from '../lib/savings'
+import { calculateSavings, type SavingsInput } from '../lib/savings'
 
 interface FormErrors {
   deposito?: string
@@ -7,12 +7,16 @@ interface FormErrors {
   plazo?: string
 }
 
-function FormularioPage() {
+interface FormularioPageProps {
+  savingsInput: SavingsInput | null
+  onSubmit: (input: SavingsInput) => void
+}
+
+function FormularioPage({ savingsInput, onSubmit }: FormularioPageProps) {
   const [deposito, setDeposito] = useState('')
   const [tasa, setTasa] = useState('')
   const [plazo, setPlazo] = useState('')
   const [errores, setErrores] = useState<FormErrors>({})
-  const [resultado, setResultado] = useState<SavingsResult | null>(null)
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -28,25 +32,29 @@ function FormularioPage() {
     if (tasa.trim() === '' || Number.isNaN(tasaNum) || tasaNum <= 0) {
       nuevosErrores.tasa = 'Ingrese una tasa de interés positiva mayor a cero.'
     }
-    if (plazo.trim() === '' || Number.isNaN(plazoNum) || plazoNum <= 0) {
-      nuevosErrores.plazo = 'Ingrese un plazo positivo mayor a cero.'
+    if (
+      plazo.trim() === '' ||
+      Number.isNaN(plazoNum) ||
+      plazoNum <= 0 ||
+      !Number.isInteger(plazoNum)
+    ) {
+      nuevosErrores.plazo = 'Ingrese un plazo positivo en años enteros (ej. 1, 2, 3).'
     }
 
     setErrores(nuevosErrores)
 
     if (Object.keys(nuevosErrores).length > 0) {
-      setResultado(null)
       return
     }
 
-    setResultado(
-      calculateSavings({
-        principal: depositoNum,
-        annualRate: tasaNum / 100,
-        termYears: plazoNum,
-      }),
-    )
+    onSubmit({
+      principal: depositoNum,
+      annualRate: tasaNum / 100,
+      termYears: plazoNum,
+    })
   }
+
+  const resultado = savingsInput ? calculateSavings(savingsInput) : null
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center py-10 px-4">
@@ -99,7 +107,7 @@ function FormularioPage() {
           <input
             id="plazo"
             type="number"
-            step="any"
+            step="1"
             value={plazo}
             onChange={(e) => setPlazo(e.target.value)}
             className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
