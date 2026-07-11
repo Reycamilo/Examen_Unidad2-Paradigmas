@@ -59,3 +59,31 @@ export function calcularProyeccionMensual(input: SavingsInput): FilaMensual[] {
 
   return filas
 }
+
+export interface FilaAnual {
+  year: number
+  balance: number
+  interest: number
+}
+
+export function calcularProyeccionAnual(input: SavingsInput): FilaAnual[] {
+  const monthlyRate = input.annualRate / 12
+  const filas: FilaAnual[] = []
+
+  for (let y = 1; y <= input.termYears; y++) {
+    const months = y * 12
+    const monthsPrev = (y - 1) * 12
+    const balance = calculateBalance(input.principal, monthlyRate, months)
+    const balancePrev = monthsPrev === 0
+      ? input.principal
+      : calculateBalance(input.principal, monthlyRate, monthsPrev)
+
+    filas.push({
+      year: y,
+      balance,
+      interest: balance - balancePrev,
+    })
+  }
+
+  return filas
+}
